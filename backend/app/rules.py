@@ -1,7 +1,7 @@
 import time
 
 class RestrictedZoneRule:
-    def __init__(self, polygon, confidence_threshold=0.45, min_frames=3, window_frames=5, cooldown_secs=5):
+    def __init__(self, polygon, confidence_threshold=0.45, min_frames=2, window_frames=3, cooldown_secs=5):
         self.polygon = polygon # list of (x, y) tuples, normalized 0.0-1.0
         self.confidence_threshold = confidence_threshold
         self.min_frames = min_frames
@@ -64,6 +64,7 @@ class RestrictedZoneRule:
             
         elif frames_inside == 0 and self.current_state == "violation":
             self.current_state = "ok"
+            self.last_event_time = 0 # Reset cooldown so immediate re-entry is recorded
             return {"trigger": True, "type": "zone_cleared", "confidence": 1.0}
 
         return {"trigger": False}
