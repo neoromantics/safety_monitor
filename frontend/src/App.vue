@@ -243,7 +243,6 @@ main {
 video {
   width: 100%;
   max-height: 60vh;
-  transform: scaleX(-1); /* Mirror camera naturally */
 }
 canvas {
   position: absolute;
@@ -252,7 +251,6 @@ canvas {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  transform: scaleX(-1); /* Mirror canvas to match video */
 }
 .video-placeholder {
   width: 100%;
