@@ -91,7 +91,7 @@ const startCamera = async () => {
       // Send as jpeg
       const base64 = hiddenCanvas.toDataURL('image/jpeg', 0.6)
       ws.send(base64)
-    }, 50) // 20 FPS
+    }, 100) // 10 FPS
     
   } catch (err) {
     console.error("Camera access denied:", err)
