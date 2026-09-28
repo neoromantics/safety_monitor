@@ -1,10 +1,14 @@
-from fastapi import FastAPI, Depends, BackgroundTasks, Request
+from fastapi import FastAPI, Depends, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 from sqlalchemy.orm import Session
 import asyncio
 import json
+import base64
+import numpy as np
+import cv2
+import time
 
 from . import database, schemas, inference
 
@@ -48,25 +52,8 @@ worker = inference.InferenceWorker(db_session_maker=database.SessionLocal, event
 
 @app.on_event("startup")
 async def startup_event():
-    import os
-    source = os.getenv("VIDEO_SOURCE", 0)
-    if str(source).isdigit():
-        source = int(source)
-    # Attempt to start worker with configured source
-    worker.start(source=source)
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    worker.stop()
-
-@app.get("/api/status")
-def get_status():
-    return {
-        "status": worker.status,
-        "fps": worker.fps,
-        "latency": worker.latency,
-        "source": str(worker.source)
-    }
+    # Pre-load the model so it's ready for websockets
+    worker.load_model()
 
 @app.get("/api/events", response_model=list[schemas.EventResponse])
 def get_events(db: Session = Depends(get_db)):
@@ -97,15 +84,75 @@ async def event_stream(request: Request):
             clients.remove(queue)
     return EventSourceResponse(event_generator())
 
-def video_generator():
-    while True:
-        if worker.current_frame:
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + worker.current_frame + b'\r\n')
-        else:
-            time.sleep(0.1)
-import time
-
-@app.get("/api/video.mjpg")
-def video_feed():
-    return StreamingResponse(video_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
+@app.websocket("/api/ws/video")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    
+    # Setup FPS counter for this connection
+    frame_count = 0
+    start_time = time.time()
+    current_fps = 0
+    
+    try:
+        while True:
+            data = await websocket.receive_text()
+            
+            # Decode base64 image
+            if data.startswith('data:image/jpeg;base64,'):
+                data = data.split(',')[1]
+                
+            img_bytes = base64.b64decode(data)
+            np_arr = np.frombuffer(img_bytes, np.uint8)
+            frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            
+            if frame is None:
+                continue
+                
+            # Process frame using worker logic
+            t0 = time.time()
+            # Predict only class 0 (person), using smaller imgsz for faster CPU inference
+            results = worker.model.predict(frame, classes=[0], verbose=False, imgsz=320)
+            t1 = time.time()
+            latency = (t1 - t0) * 1000
+            
+            h, w = frame.shape[:2]
+            detections = []
+            
+            for r in results:
+                boxes = r.boxes
+                for box in boxes:
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    conf = box.conf[0].item()
+                    detections.append({
+                        'box': [x1/w, y1/h, x2/w, y2/h],
+                        'conf': conf
+                    })
+            
+            # Check rule
+            rule_result = worker.rule.process(detections)
+            if rule_result['trigger']:
+                on_event_triggered({
+                    "type": rule_result['type'],
+                    "confidence": rule_result['confidence'],
+                    "source": "Browser Webcam",
+                    "model_info": "YOLOv8n"
+                })
+                
+            # Calculate FPS
+            frame_count += 1
+            elapsed = time.time() - start_time
+            if elapsed > 1.0:
+                current_fps = frame_count / elapsed
+                frame_count = 0
+                start_time = time.time()
+                
+            await websocket.send_json({
+                "fps": current_fps,
+                "latency": latency,
+                "detections": detections
+            })
+            
+    except WebSocketDisconnect:
+        print("Client disconnected")
+    except Exception as e:
+        print(f"WebSocket error: {e}")
