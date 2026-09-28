@@ -122,7 +122,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 boxes = r.boxes
                 for box in boxes:
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
-                    conf = box.conf[0].item()
+                    raw_conf = box.conf[0].item()
+                    # Round confidence to nearest 0.05 at the compute level
+                    conf = round(raw_conf * 20) / 20.0
                     detections.append({
                         'box': [x1/w, y1/h, x2/w, y2/h],
                         'conf': conf
