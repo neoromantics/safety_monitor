@@ -1,0 +1,26 @@
+# Python & Environment
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv/
+venv/
+env/
+backend/.venv/
+.pytest_cache/
+
+# Node & Vue Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.npm/
+npm-debug.log*
+
+# Models & Persistent Data
+*.pt
+*.pth
+*.onnx
+data/
+*.db
+*.sqlite
+*.sqlite3
+demo/*.mp4
