@@ -3,7 +3,10 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 import os
 
-DATABASE_URL = "sqlite:///../data/safety_system.db"
+data_dir = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+os.makedirs(data_dir, exist_ok=True)
+db_path = os.path.abspath(os.path.join(data_dir, "safety_system.db"))
+DATABASE_URL = f"sqlite:///{db_path}"
 
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
