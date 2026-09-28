@@ -71,7 +71,13 @@ const startCamera = async () => {
 
       hiddenCanvas.width = width
       hiddenCanvas.height = height
+      
+      // Mirror the frame so the backend sees exactly what the user sees
+      ctx.save()
+      ctx.translate(width, 0)
+      ctx.scale(-1, 1)
       ctx.drawImage(videoRef.value, 0, 0, width, height)
+      ctx.restore()
       
       // Send as jpeg
       const base64 = hiddenCanvas.toDataURL('image/jpeg', 0.6)
@@ -243,6 +249,7 @@ main {
 video {
   width: 100%;
   max-height: 60vh;
+  transform: scaleX(-1); /* Mirror camera naturally */
 }
 canvas {
   position: absolute;
