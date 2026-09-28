@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 
 const status = ref({})
 const events = ref([])
-const backendUrl = "http://localhost:8000"
+const backendUrl = import.meta.env.PROD ? "" : "http://localhost:8000"
 
 const fetchStatus = async () => {
   try {

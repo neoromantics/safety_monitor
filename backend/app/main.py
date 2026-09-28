@@ -48,8 +48,12 @@ worker = inference.InferenceWorker(db_session_maker=database.SessionLocal, event
 
 @app.on_event("startup")
 async def startup_event():
-    # Attempt to start worker with webcam
-    worker.start(source=0)
+    import os
+    source = os.getenv("VIDEO_SOURCE", 0)
+    if str(source).isdigit():
+        source = int(source)
+    # Attempt to start worker with configured source
+    worker.start(source=source)
 
 @app.on_event("shutdown")
 async def shutdown_event():

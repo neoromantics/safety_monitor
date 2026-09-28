@@ -9,6 +9,8 @@ services:
     volumes:
       - ./data:/app/data
       - ./demo:/app/demo
+    environment:
+      - VIDEO_SOURCE=/app/demo/positive.mp4
     # device mapping for Linux webcams
     # devices:
     #   - "/dev/video0:/dev/video0"
