@@ -48,10 +48,19 @@ const startCamera = async () => {
       console.log("WebSocket connected")
       status.value.status = 'running'
     }
+    
+    let lastMetricsUpdate = 0
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data)
-      status.value.fps = data.fps
-      status.value.latency = data.latency
+      
+      // Update metrics text only twice a second so it's readable
+      const now = Date.now()
+      if (now - lastMetricsUpdate > 500) {
+        status.value.fps = data.fps
+        status.value.latency = data.latency
+        lastMetricsUpdate = now
+      }
+      
       drawDetections(data.detections)
     }
     ws.onerror = () => {
