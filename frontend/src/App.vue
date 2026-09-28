@@ -143,7 +143,6 @@ onUnmounted(() => {
     <header>
       <h1>AI Safety Monitor</h1>
       <div class="status-bar">
-        <span class="badge">Source: Browser Webcam</span>
       </div>
     </header>
 

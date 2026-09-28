@@ -23,7 +23,7 @@ class InferenceWorker:
         self.rule = RestrictedZoneRule(polygon=[(0.6, 0.0), (1.0, 0.0), (1.0, 1.0), (0.6, 1.0)])
         
     def load_model(self):
-        model_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "yolov8n.pt")
+        model_path = os.path.join(os.path.dirname(__file__), "..", "data", "yolov8n.pt")
         if not os.path.exists(model_path):
             self.status = "model_unavailable"
             return False
