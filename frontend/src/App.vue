@@ -132,7 +132,9 @@ const drawDetections = (detections) => {
     
     ctx.fillStyle = 'lime'
     ctx.font = '16px Arial'
-    ctx.fillText(`Person ${(d.conf * 100).toFixed(0)}%`, px1, py1 - 5)
+    // Round to nearest 5% to prevent the text from flickering rapidly
+    const stableConf = Math.round(d.conf * 20) * 5
+    ctx.fillText(`Person ${stableConf}%`, px1, py1 - 5)
   }
 }
 
